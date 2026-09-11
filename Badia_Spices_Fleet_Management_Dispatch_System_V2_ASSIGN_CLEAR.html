@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Badia Spices — Cloud Fleet & Audio Hub</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={
+  theme:{extend:{colors:{
+    badiaRed:'#DC2626',badiaDarkRed:'#B91C1C',badiaGold:'#F59E0B',badiaDark:'#0F172A'
+  }}}
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+:root{--red:#dc2626;--red2:#b91c1c;--dark:#0b1220;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--soft:#f8fafc;--gold:#f59e0b}
+html{scroll-behavior:smooth}
+body{font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 10% 0%,rgba(220,38,38,.09),transparent 28%),radial-gradient(circle at 90% 10%,rgba(245,158,11,.08),transparent 25%),#f1f5f9;color:var(--ink);min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:linear-gradient(rgba(15,23,42,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.025) 1px,transparent 1px);background-size:32px 32px;z-index:-1}
+.view-section{display:none}.view-section.active{display:block}
+.glass-card{background:rgba(255,255,255,.93);border:1px solid rgba(226,232,240,.9);box-shadow:0 16px 45px rgba(15,23,42,.09);border-radius:22px;backdrop-filter:blur(10px)}
+.glass-dark{background:linear-gradient(145deg,#0b1220,#111827 58%,#171d2b);color:#fff;box-shadow:0 24px 60px rgba(2,6,23,.28)}
+#leaflet-map{height:100%;min-height:420px;border-radius:18px;z-index:1}
+#ptt-btn{width:176px;height:176px;border-radius:50%;box-shadow:0 18px 45px rgba(220,38,38,.25),inset 0 0 0 10px rgba(255,255,255,.08);transition:.15s;touch-action:none;border:8px solid rgba(255,255,255,.08)}
+#admin-ptt-btn{transition:.15s;touch-action:none;box-shadow:0 15px 35px rgba(15,23,42,.25)}
+#ptt-btn:active,#admin-ptt-btn:active{transform:scale(.96)}
+.pulse{animation:pulse 1.2s infinite}@keyframes pulse{50%{box-shadow:0 0 0 22px rgba(220,38,38,0),0 0 35px rgba(220,38,38,.5)}}
+.chat-scroll{max-height:440px;overflow-y:auto;scrollbar-width:thin}
+.message{max-width:82%;word-break:break-word}
+.toast{position:fixed;right:18px;bottom:18px;z-index:9999;transform:translateY(130px);opacity:0;transition:.25s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.sync-dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.12)}
+.sync-dot.ok{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.12)}.sync-dot.bad{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.12)}
+input,select,button{font:inherit}button{transition:transform .12s,box-shadow .12s,background .12s}button:hover:not(:disabled){transform:translateY(-1px)}button:disabled{opacity:.55;cursor:not-allowed}
+input,select{background:rgba(255,255,255,.98);border-color:#dbe3ed!important}input:focus,select:focus{box-shadow:0 0 0 4px rgba(220,38,38,.09);border-color:#ef4444!important}
+header{background:linear-gradient(105deg,#070b13,#111827 60%,#1b2332)!important}
+.badia-logo{position:relative;overflow:hidden;box-shadow:0 8px 22px rgba(220,38,38,.28)}.badia-logo:after{content:"";position:absolute;width:35px;height:100px;background:rgba(255,255,255,.18);transform:rotate(35deg);left:-42px;top:-20px;animation:shine 5s infinite}@keyframes shine{0%,60%{left:-42px}80%,100%{left:70px}}
+.login-hero{position:relative;overflow:hidden;background:linear-gradient(145deg,#fff,#fff7f7 65%,#fff)}
+.login-hero:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:-85px;top:-80px;background:radial-gradient(circle,rgba(220,38,38,.18),transparent 70%);pointer-events:none}
+.stat-card{position:relative;overflow:hidden}.stat-card:after{content:"";position:absolute;right:-28px;bottom:-35px;width:100px;height:100px;border-radius:50%;background:rgba(220,38,38,.06)}
+.section-kicker{letter-spacing:.12em;font-size:10px;font-weight:800;color:#94a3b8}
+@media(max-width:900px){#leaflet-map{min-height:320px}.admin-grid{grid-template-columns:1fr!important}}
+@media(max-width:640px){main{padding-left:12px!important;padding-right:12px!important}.glass-card{border-radius:18px}.message{max-width:90%}.login-hero{padding:22px!important}#ptt-btn{width:160px;height:160px}.toast{right:10px;left:10px}.toast>div{width:100%!important}}
+
+.delivery-log-card{border:1px solid rgba(148,163,184,.22);background:rgba(255,255,255,.05);border-radius:16px;padding:14px}
+.delivery-status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800}
+.delivery-status.delivered{background:#dcfce7;color:#166534}.delivery-status.accepted{background:#dbeafe;color:#1d4ed8}.delivery-status.pending{background:#fef3c7;color:#92400e}
+.log-empty{padding:28px 12px;text-align:center;color:#94a3b8}
+.log-table{width:100%;border-collapse:separate;border-spacing:0}.log-table th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:left;padding:10px 8px;border-bottom:1px solid #e2e8f0}.log-table td{font-size:12px;padding:11px 8px;border-bottom:1px solid #eef2f7;vertical-align:top}.log-table tr:last-child td{border-bottom:0}.log-table-wrap{overflow-x:auto}
+@media(max-width:760px){.log-table{min-width:700px}}
+
+.brand-hero{position:relative;overflow:hidden;border-radius:20px;margin:-2px -2px 22px;background:#0b1220;box-shadow:0 16px 38px rgba(15,23,42,.18)}
+.brand-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.24));pointer-events:none}
+.portal-brand{margin:0 0 18px;border-radius:18px}
+.login-brand{margin-bottom:22px}
+@media(max-width:640px){
+  .login-brand img{height:180px}
+  .portal-brand img{height:105px}
+}
+.clear-chat-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.clear-chat-btn{border:1px solid #fecaca;background:#fff1f2;color:#b91c1c;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:800}.clear-chat-btn:hover{background:#fee2e2}.clear-chat-dialog{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.58);display:flex;align-items:center;justify-content:center;padding:18px}.clear-chat-dialog.hidden{display:none}.clear-chat-box{width:min(420px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 25px 70px rgba(2,6,23,.35)}
+/* ---------- BADIA FLEET MANAGEMENT V2 ---------- */
+.admin-stat-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1050px){.admin-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:640px){.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sos-card{border:1px solid #fecaca;background:linear-gradient(135deg,#fff1f2,#fff);border-radius:16px;padding:14px;box-shadow:0 10px 25px rgba(220,38,38,.08)}
+.sos-live{animation:sosPulse 1.15s infinite}@keyframes sosPulse{50%{box-shadow:0 0 0 8px rgba(220,38,38,.12)}}
+.status-chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;letter-spacing:.04em}
+.status-pending{background:#fef3c7;color:#92400e}.status-accepted{background:#dbeafe;color:#1d4ed8}.status-onway{background:#ede9fe;color:#6d28d9}.status-delivered{background:#dcfce7;color:#166534}
+.proof-thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0}
+.admin-filter-row{display:grid;grid-template-columns:1fr 150px;gap:8px}
+@media(max-width:640px){.admin-filter-row{grid-template-columns:1fr}}
+.auth-security-note{font-size:11px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px;line-height:1.55}
+.rider-tab-label{font-size:12px;line-height:1.1}@media(max-width:420px){.rider-tab-label{font-size:10px}}
+
+.badia-login-footer{position:relative;text-align:center}.badia-footer-rule{width:54px;height:3px;margin:0 auto 10px;border-radius:999px;background:linear-gradient(90deg,transparent,#dc2626,#f59e0b,transparent);opacity:.9}.badia-footer-brand{font-family:Inter,Arial,sans-serif;font-size:15px;font-weight:900;letter-spacing:.18em;color:#0f172a;line-height:1.2}.badia-footer-credit{margin-top:6px;font-family:Inter,Arial,sans-serif;font-size:9px;font-weight:800;letter-spacing:.28em;color:#94a3b8;opacity:.72;line-height:1.4;text-transform:uppercase}.badia-footer-credit:before{content:"";display:inline-block;width:5px;height:5px;margin:0 7px 1px 0;border-radius:50%;background:#cbd5e1;vertical-align:middle}.badia-footer-credit:after{content:"";display:inline-block;width:5px;height:5px;margin:0 0 1px 7px;border-radius:50%;background:#cbd5e1;vertical-align:middle}@media(max-width:640px){.badia-footer-brand{font-size:14px;letter-spacing:.15em}.badia-footer-credit{font-size:8px;letter-spacing:.22em}}
+
+/* ==========================================================
+   BADIA SPICES — UI/UX POLISH LAYER
+   Visual-only overrides. No application logic is changed.
+   ========================================================== */
+:root{
+  --badia-red:#c91f26;--badia-red-dark:#9f1720;--badia-gold:#e6a21a;
+  --ui-bg:#f4f6f8;--ui-card:#ffffff;--ui-line:#e5e7eb;--ui-text:#111827;--ui-muted:#6b7280;
+  --ui-radius:18px;
+}
+body{background:linear-gradient(180deg,#f8fafc 0%,#f3f5f7 48%,#eef1f4 100%);color:var(--ui-text)}
+body:before{opacity:.18;background-size:40px 40px}
+header{min-height:68px!important;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 8px 28px rgba(2,6,23,.18);position:sticky;top:0;z-index:50}
+header .badia-logo{border-radius:12px!important}
+main{max-width:1480px!important;margin:0 auto}
+.view-section.active{animation:badiaFade .22s ease-out}@keyframes badiaFade{from{opacity:.94;transform:translateY(3px)}to{opacity:1;transform:none}}
+.glass-card{background:rgba(255,255,255,.97);border:1px solid rgba(226,232,240,.9);border-radius:var(--ui-radius);box-shadow:0 8px 28px rgba(15,23,42,.055);backdrop-filter:none}
+.glass-card:hover{box-shadow:0 12px 34px rgba(15,23,42,.075)}
+.glass-dark{border-radius:var(--ui-radius);box-shadow:0 14px 38px rgba(2,6,23,.2)}
+.brand-hero{border-radius:var(--ui-radius);box-shadow:0 12px 30px rgba(15,23,42,.12);margin-bottom:20px}
+
+/* Headings and section rhythm */
+main h1{letter-spacing:-.025em}
+main h2{letter-spacing:-.018em}
+main h3{letter-spacing:-.01em}
+.section-kicker{font-size:9px;letter-spacing:.16em;color:#94a3b8}
+
+/* Dashboard statistic tiles */
+.stat-card{border:1px solid #e7eaf0!important;border-radius:16px!important;background:#fff!important;box-shadow:0 5px 18px rgba(15,23,42,.045)!important;padding:16px!important}
+.stat-card:after{background:rgba(201,31,38,.045)}
+.stat-card .text-2xl,.stat-card .text-3xl{font-weight:900;letter-spacing:-.035em}
+.admin-stat-grid{gap:12px!important}
+
+/* Form controls */
+input,select,textarea{border:1px solid #d9dee7!important;border-radius:11px!important;min-height:42px;color:#111827!important;box-shadow:none!important}
+textarea{min-height:90px}
+input::placeholder,textarea::placeholder{color:#9ca3af}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:#d9464f!important;box-shadow:0 0 0 3px rgba(201,31,38,.09)!important}
+label{font-weight:700}
+button{border-radius:11px!important;font-weight:800}
+button.bg-red-600,button.bg-red-700{box-shadow:0 5px 14px rgba(201,31,38,.18)}
+button.bg-red-600:hover,button.bg-red-700:hover{box-shadow:0 7px 18px rgba(201,31,38,.23)}
+
+/* Navigation / tabs */
+nav{gap:5px!important}
+nav button{min-height:40px;border:1px solid transparent}
+nav button:hover{background:rgba(255,255,255,.08)}
+
+/* Tables */
+.log-table-wrap{border:1px solid #e7eaf0;border-radius:14px;background:#fff}
+.log-table th{background:#f8fafc;color:#64748b;font-size:9px;letter-spacing:.11em;font-weight:900;white-space:nowrap}
+.log-table td{font-size:12px;color:#334155}
+.log-table tbody tr:hover td{background:#fafafa}
+
+/* Dispatch and operational cards */
+.delivery-log-card,.sos-card{border-radius:15px;box-shadow:0 5px 18px rgba(15,23,42,.045)}
+.status-chip,.delivery-status{padding:6px 10px;border:1px solid rgba(15,23,42,.05)}
+.sos-card{background:linear-gradient(135deg,#fff7f7,#fff);border-color:#fecaca}
+
+/* Search/filter areas */
+.admin-filter-row{gap:10px}
+.admin-filter-row input,.admin-filter-row select{background:#fff}
+
+/* Proof-of-delivery presentation */
+.proof-thumb{width:64px;height:64px;border-radius:12px;box-shadow:0 3px 10px rgba(15,23,42,.08)}
+
+/* Chat */
+.chat-scroll{padding:4px 2px}
+.message{border-radius:15px!important;box-shadow:0 2px 8px rgba(15,23,42,.045)}
+
+/* Login */
+.login-hero{border-radius:22px!important;box-shadow:0 18px 48px rgba(15,23,42,.08)!important}
+.login-brand{border-radius:16px!important;overflow:hidden}
+.auth-security-note{background:#f8fafc;border-color:#e7eaf0}
+
+/* Mobile: preserve function, improve touch ergonomics */
+@media(max-width:760px){
+  body{font-size:14px}
+  main{padding-top:8px!important;padding-bottom:24px!important}
+  .glass-card{border-radius:16px}
+  .admin-stat-grid{gap:9px!important}
+  .stat-card{padding:13px!important}
+  button{min-height:42px}
+  .brand-hero{margin-left:0;margin-right:0;border-radius:16px}
+}
+@media(max-width:420px){
+  .stat-card{padding:11px!important}
+  .stat-card .text-2xl,.stat-card .text-3xl{font-size:1.35rem!important}
+  input,select,textarea{min-height:44px}
+}
+
+/* ==========================================================
+   BADIA SPICES — RIDER LIGHT INTERFACE
+   Visual-only override. No application logic changed.
+   ========================================================== */
+#view-rider-portal.glass-dark{
+  background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%)!important;
+  color:#0f172a!important;
+  box-shadow:0 18px 50px rgba(15,23,42,.12)!important;
+  border:1px solid #e2e8f0;
+}
+#view-rider-portal .border-white\/10{border-color:#e5e7eb!important}
+#view-rider-portal .text-slate-400{color:#64748b!important}
+#view-rider-portal .text-slate-300{color:#475569!important}
+#view-rider-portal .bg-white\/10{background:#ffffff!important;border:1px solid #e5e7eb}
+#view-rider-portal #rider-cloud-pill{background:#1e293b!important;color:#fff!important;border-color:#334155!important;box-shadow:0 4px 12px rgba(15,23,42,.12)!important}
+#view-rider-portal button[onclick="riderLogout()"]{background:#1e293b!important;color:#fff!important;border-color:#334155!important}
+#view-rider-portal button[onclick="riderLogout()"]:hover{background:#0f172a!important}
+#view-rider-portal .bg-white\/5{background:#f8fafc!important;border:1px solid #e2e8f0}
+#view-rider-portal #rider-chat-messages{background:#f8fafc!important;color:#0f172a!important;border:1px solid #e2e8f0}
+#view-rider-portal #rider-chat-input{
+  background:#ffffff!important;
+  color:#111827!important;
+  -webkit-text-fill-color:#111827!important;
+  border:1.5px solid #cbd5e1!important;
+  box-shadow:0 3px 12px rgba(15,23,42,.05)!important;
+  caret-color:#c91f26!important;
+}
+#view-rider-portal #rider-chat-input::placeholder{color:#94a3b8!important;opacity:1}
+#view-rider-portal #rider-chat-input:focus{border-color:#c91f26!important;box-shadow:0 0 0 3px rgba(201,31,38,.10)!important}
+#view-rider-portal .clear-chat-row{padding-top:2px}
+#view-rider-portal .rider-tab-label{color:#334155!important}
+#view-rider-portal .rider-tab-label.bg-red-600{color:#fff!important;border-color:#c91f26!important}
+#view-rider-portal #rider-subtab-chat .clear-chat-btn{background:#fff1f2!important;border-color:#fecaca!important;color:#b91c1c!important}
+#view-rider-portal #rider-subtab-chat form{background:#eef2f7;border:1px solid #e2e8f0;border-radius:15px;padding:5px}
+#view-rider-portal #rider-subtab-chat form button{min-width:52px}
+@media(max-width:640px){
+  #view-rider-portal #rider-chat-messages{min-height:300px!important}
+  #view-rider-portal #rider-chat-input{font-size:16px!important}
+}
+</style>
+</head>
+
+<body>
+<header class="sticky top-0 z-50 bg-slate-950 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="badia-logo w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center font-black text-xl">B</div>
+      <div>
+        <div class="font-extrabold leading-tight tracking-wide">BADIA SPICES</div>
+        <div class="text-xs text-slate-300">Cloud Fleet &amp; Audio Hub</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="sync-status-badge" style="pointer-events:none" class="text-xs bg-slate-800 px-3 py-2 rounded-full flex items-center gap-2">
+        <span id="sync-dot" class="sync-dot"></span><span id="sync-text">Connecting...</span>
+      </div>
+      <div id="header-auth-controls"></div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+<section id="view-auth" class="view-section active">
+  <div class="max-w-md mx-auto">
+    <div class="glass-card login-hero p-6 md:p-8">
+<div class="text-center mb-7 relative z-10">
+        <div class="inline-flex w-16 h-16 rounded-2xl bg-red-600 text-white items-center justify-center text-2xl mb-4">
+          <i class="fa-solid fa-tower-broadcast"></i>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Badia Audio Fleet Portal</h1>
+        <p class="text-sm text-slate-500 mt-2">Smart dispatch • live fleet • two-way voice</p>
+      </div>
+
+      <div class="grid grid-cols-2 bg-slate-100/90 rounded-xl p-1 mb-6 shadow-inner">
+        <button type="button" style="position:relative;z-index:20;pointer-events:auto;touch-action:manipulation" id="auth-tab-rider" onclick="setAuthMode('rider')" class="rounded-lg py-2.5 font-bold bg-white shadow">Rider</button>
+        <button type="button" style="position:relative;z-index:20;pointer-events:auto;touch-action:manipulation" id="auth-tab-admin" onclick="setAuthMode('admin')" class="rounded-lg py-2.5 font-bold text-slate-500">Admin</button>
+      </div>
+
+      <form id="form-rider-auth" onsubmit="handleRiderLogin(event)" class="space-y-4">
+        <div>
+          <label class="text-sm font-semibold">Full Name</label>
+          <input id="rider-input-name" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500" placeholder="Enter full name">
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Phone Number</label>
+          <input id="rider-input-phone" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500" placeholder="e.g. 024 000 0000">
+        </div>
+        <button id="rider-login-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl">
+          Launch Rider Shift &amp; Chat
+        </button>
+      </form>
+
+      <form id="form-admin-auth" onsubmit="handleAdminLogin(event)" class="space-y-4 hidden">
+        <div>
+          <label class="text-sm font-semibold">Admin Email</label>
+          <input id="admin-input-email" type="email" autocomplete="username" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500" placeholder="admin@example.com">
+        </div>
+        <div>
+          <label class="text-sm font-semibold">Admin Password</label>
+          <input id="admin-input-pass" type="password" autocomplete="current-password" required class="mt-1 w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500" placeholder="Enter admin password">
+        </div>
+        <button id="admin-login-btn" class="w-full bg-slate-950 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl">
+          <i class="fa-solid fa-shield-halved mr-2"></i>Secure Admin Sign In
+        </button>
+        <div class="auth-security-note"><i class="fa-solid fa-lock mr-1 text-green-600"></i> Admin access is protected by Supabase Authentication and an authorized Admin account.</div>
+        <p class="text-[11px] tracking-widest font-bold text-slate-400 text-center">ADMIN ACCESS</p>
+      </form>
+
+      <div id="connection-message" class="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
+        Cloud connection is starting. Admin login is available independently.
+      </div>
+
+      <div class="badia-login-footer mt-7 pt-5 text-center">
+        <div class="badia-footer-rule"></div>
+        <div class="badia-footer-brand">BADIA SPICES</div>
+        <div class="badia-footer-credit">CREATED BY JEFF.0</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="view-rider-portal" class="view-section">
+  <div class="glass-dark rounded-3xl overflow-hidden max-w-3xl mx-auto">
+    <div class="p-4 flex items-center justify-between border-b border-white/10">
+      <div class="flex items-center gap-3">
+        <div id="rider-avatar-initial" class="w-11 h-11 rounded-full bg-red-600 flex items-center justify-center font-bold">R</div>
+        <div>
+          <div id="rider-display-name" class="font-bold">Rider</div>
+          <div id="rider-display-phone" class="text-xs text-slate-400"></div>
+        </div>
+      </div>
+      <button onclick="riderLogout()" class="px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-700 shadow-sm text-sm font-semibold hover:bg-slate-700">Logout</button>
+    </div>
+
+    <div class="px-4 pt-4">
+<div class="flex items-center justify-between">
+        <div class="text-xs text-slate-400">SHIFT STATUS</div>
+        <div id="rider-phone-clock" class="text-sm font-semibold"></div>
+      </div>
+      <div id="rider-cloud-pill" class="mt-2 inline-flex items-center gap-2 text-xs bg-slate-800 text-white border border-slate-700 px-3 py-1.5 rounded-full shadow-sm">
+        <span class="sync-dot"></span>Cloud
+      </div>
+    </div>
+
+    <div class="p-4">
+      <div class="grid grid-cols-5 gap-2 bg-white/10 rounded-xl p-1">
+        <button id="rtab-gps" onclick="switchRiderTab('gps')" class="rider-tab-label rounded-lg py-2 bg-white text-slate-900 text-xs font-bold">GPS</button>
+        <button id="rtab-dispatch" onclick="switchRiderTab('dispatch')" class="rider-tab-label rounded-lg py-2 text-xs font-bold">Dispatch</button>
+        <button id="rtab-chat" onclick="switchRiderTab('chat')" class="rider-tab-label rounded-lg py-2 text-xs font-bold">Chat</button>
+        <button id="rtab-log" onclick="switchRiderTab('log')" class="rider-tab-label rounded-lg py-2 text-xs font-bold">Delivery Log</button>
+        <button id="rtab-audio" onclick="switchRiderTab('audio')" class="rider-tab-label rounded-lg py-2 text-xs font-bold">Walkie</button>
+      </div>
+    </div>
+
+    <div id="rider-subtab-gps" class="p-4">
+      <div class="bg-white/10 rounded-2xl p-5">
+        <div class="text-sm font-bold mb-2">GPS Location</div>
+        <div id="rider-gps-status-box" class="text-sm text-slate-300">Location has not been requested.</div>
+        <button onclick="requestDeviceGeolocation()" class="mt-4 bg-red-600 px-4 py-3 rounded-xl font-bold">
+          <i class="fa-solid fa-location-crosshairs mr-2"></i>Enable GPS
+        </button>
+      </div>
+    </div>
+
+    <div id="rider-subtab-dispatch" class="p-4 hidden">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="text-lg font-extrabold">Dispatch Inbox</div>
+          <div class="text-xs text-slate-400">Orders assigned specifically to you</div>
+        </div>
+        <span id="rider-dispatch-count" class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">0</span>
+      </div>
+      <div id="rider-dispatch-list" class="space-y-3"></div>
+    </div>
+
+    <div id="rider-subtab-chat" class="p-4 hidden">
+      <div class="clear-chat-row"><div class="section-kicker">PRIVATE CHAT</div><button id="rider-clear-chat-btn" type="button" class="clear-chat-btn">🗑 CLEAR CHAT</button></div><div id="rider-chat-messages" class="chat-scroll space-y-3 bg-white/5 rounded-2xl p-4 min-h-[300px]"></div>
+      <form onsubmit="sendRiderMessage(event)" class="flex gap-2 mt-3">
+        <input id="rider-chat-input" class="flex-1 rounded-xl px-4 py-3 bg-white/10 border border-white/10 outline-none" placeholder="Type a message">
+        <button class="bg-red-600 px-5 rounded-xl font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </div>
+
+    <div id="rider-subtab-log" class="p-4 hidden">
+      <div class="rounded-2xl p-4 bg-white/10">
+        <div class="flex justify-between items-center gap-3 mb-4"><div><div class="text-[10px] font-extrabold tracking-widest text-slate-400">OPERATIONS HISTORY</div><div class="text-lg font-extrabold">My Delivery Log</div><div class="text-xs text-slate-400 mt-1">Completed deliveries remain recorded here.</div></div><div class="flex items-center gap-2"><span id="rider-delivered-count" class="bg-green-500/20 text-green-300 text-xs font-bold px-3 py-1.5 rounded-full">0 Completed</span><button id="rider-clear-history-btn" type="button" class="clear-chat-btn">🗑 CLEAR HISTORY</button></div></div>
+        <div id="rider-delivery-log"></div>
+      </div>
+    </div>
+
+    <div id="rider-subtab-audio" class="p-4 hidden text-center">
+      <div class="text-sm text-slate-400 mb-5">Hold to record a voice message</div>
+      <div id="rider-sos-panel" class="mb-5">
+        <button type="button" onclick="sendSOS()" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-xl sos-live"><i class="fa-solid fa-triangle-exclamation mr-2"></i>SOS / EMERGENCY</button>
+        <div class="text-[10px] text-slate-400 text-center mt-2">Alerts Admin with your latest GPS location.</div>
+      </div>
+      <button id="ptt-btn" type="button"
+        onpointerdown="startPTTRecording(event)"
+        onpointerup="stopPTTRecording(event)"
+        onpointercancel="stopPTTRecording(event)"
+        onpointerleave="stopPTTRecording(event)"
+        class="bg-red-600 text-white"
+        aria-label="Press and hold to record a voice message">
+        <i class="fa-solid fa-microphone text-4xl"></i>
+      </button>
+      <div id="ptt-pulse-ring" class="hidden"></div>
+      <div id="ptt-btn-text" class="font-bold mt-5">PRESS &amp; HOLD</div>
+      <div id="rider-ptt-status" class="text-sm text-slate-400 mt-2">Ready</div>
+    </div>
+  </div>
+</section>
+
+<section id="view-admin-portal" class="view-section">
+<div class="mb-5 flex items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-extrabold">Admin Command Center</h1>
+      <p class="text-sm text-slate-500">Fleet, dispatch and private rider communication</p>
+    </div>
+    <button onclick="adminLogout()" class="bg-slate-950 text-white px-4 py-2.5 rounded-xl font-semibold">Logout</button>
+  </div>
+
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <div class="section-kicker">COMMAND CENTER OVERVIEW</div>
+    <button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('dashboard')">🗑 CLEAR DASHBOARD</button>
+  </div>
+
+  <div class="admin-stat-grid grid gap-3 mb-5">
+    <div class="glass-card stat-card p-4"><div class="section-kicker">ACTIVE ORDERS</div><div id="admin-order-count" class="text-2xl font-extrabold mt-1">0</div><div class="text-[10px] text-slate-400 mt-1">Pending + active</div></div>
+    <div class="glass-card stat-card p-4"><div class="section-kicker">ONLINE RIDERS</div><div id="admin-fleet-count" class="text-2xl font-extrabold mt-1">0</div><div class="text-[10px] text-slate-400 mt-1">Live fleet</div></div>
+    <div class="glass-card stat-card p-4"><div class="section-kicker">COMPLETED TODAY</div><div id="admin-completed-today" class="text-2xl font-extrabold mt-1">0</div><div class="text-[10px] text-slate-400 mt-1">Delivered today</div></div>
+    <div class="glass-card stat-card p-4"><div class="section-kicker">SOS ALERTS</div><div id="admin-sos-count" class="text-2xl font-extrabold mt-1 text-red-600">0</div><div class="text-[10px] text-slate-400 mt-1">Unacknowledged</div></div>
+    <div class="glass-card stat-card p-4"><div class="section-kicker">CLOUD</div><div id="admin-cloud-state" class="text-2xl font-extrabold mt-1">Offline</div><div class="text-[10px] text-slate-400 mt-1">Realtime connection</div></div>
+  </div>
+
+  <div class="admin-grid grid grid-cols-[330px_1fr_350px] gap-5">
+    <div class="space-y-5">
+      <div class="glass-card p-5">
+        <h2 class="font-extrabold text-lg mb-4"><i class="fa-solid fa-truck-fast text-red-600 mr-2"></i>Order Dispatch</h2>
+        <form onsubmit="handleCreateOrder(event)" class="space-y-3">
+          <input id="order-customer" required class="w-full border rounded-xl px-3 py-2.5" placeholder="Customer name">
+          <input id="order-qty" required class="w-full border rounded-xl px-3 py-2.5" placeholder="Quantity / items">
+          <input id="order-destination" required class="w-full border rounded-xl px-3 py-2.5" placeholder="Delivery destination">
+          <div class="flex items-center justify-between gap-2">
+            <label for="order-rider" class="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Assign Rider</label>
+            <button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('assign_riders')">🗑 CLEAR LIST</button>
+          </div>
+          <select id="order-rider" class="w-full border rounded-xl px-3 py-2.5">
+            <option value="">Assign Rider</option>
+          </select>
+          <button class="w-full bg-red-600 text-white font-bold py-3 rounded-xl">Create Dispatch</button>
+        </form>
+        <button onclick="generateAndPlayTTSDispatch()" class="w-full mt-3 bg-slate-950 text-white font-bold py-3 rounded-xl">
+          <i class="fa-solid fa-volume-high mr-2"></i>Voice Dispatch
+        </button>
+      </div>
+
+      <div class="glass-card p-5">
+        <div class="flex items-center justify-between gap-3 mb-3"><h2 class="font-extrabold">Active Dispatches</h2><div class="flex items-center gap-2"><span class="text-[10px] font-bold text-slate-400">LIVE</span><button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('dispatches')">🗑 CLEAR HISTORY</button></div></div>
+        <div class="admin-filter-row mb-3">
+          <input id="admin-order-search" class="w-full border rounded-xl px-3 py-2.5 text-sm" placeholder="Search customer, rider or order ID">
+          <select id="admin-order-filter" class="w-full border rounded-xl px-3 py-2.5 text-sm">
+            <option value="all">All Active</option><option value="Pending">Pending</option><option value="Accepted">Accepted</option><option value="On the Way">On the Way</option>
+          </select>
+        </div>
+        <div id="admin-orders-list" class="space-y-2 max-h-72 overflow-auto"></div>
+      </div>
+
+      <div class="glass-card p-5">
+        <div class="flex items-center justify-between gap-3 mb-3"><h2 class="font-extrabold">Emergency Alerts</h2><div class="flex items-center gap-2"><button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('emergency')">🗑 CLEAR HISTORY</button><span id="admin-sos-badge" class="text-xs font-extrabold px-3 py-2 rounded-xl bg-red-50 text-red-700">0 Active</span></div></div>
+        <div id="admin-sos-list" class="space-y-2 max-h-56 overflow-auto"></div>
+      </div>
+
+      <div class="glass-card p-5">
+        <div class="flex items-center justify-between gap-3 mb-3"><h2 class="font-extrabold">Fleet Timestamps</h2><button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('fleet')">🗑 CLEAR HISTORY</button></div>
+        <div id="admin-riders-status" class="space-y-2 max-h-72 overflow-auto"></div>
+      </div>
+    </div>
+
+    <div class="glass-card p-3">
+      <div class="flex items-center justify-between px-2 pb-3">
+        <div class="font-extrabold">Accra Fleet Map</div>
+        <button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('map')">🗑 CLEAR HISTORY</button>
+        <div id="admin-map-status" class="text-xs text-slate-500">Waiting for rider GPS</div>
+      </div>
+      <div id="leaflet-map"></div>
+    </div>
+
+    <div class="glass-card p-5">
+      <div class="mb-3">
+        <div class="flex items-center justify-between gap-2"><div class="text-xs text-slate-500">PRIVATE CHAT</div><button type="button" class="clear-chat-btn" onclick="openAdminSectionClearDialog('chat')">🗑 CLEAR HISTORY</button></div>
+        <div id="admin-chat-header" class="font-extrabold text-lg">Select a rider</div>
+      </div>
+      <div class="glass-card p-5 mb-5">
+      <div class="flex justify-between items-center gap-3 mb-4"><div><div class="section-kicker">OPERATIONS HISTORY</div><h3 class="text-lg font-extrabold">Completed Deliveries</h3><p class="text-xs text-slate-500 mt-1">Completed delivery history for this Admin portal.</p></div><div class="flex items-center gap-2"><span id="admin-delivered-count" class="text-xs font-extrabold px-3 py-2 rounded-xl bg-green-50 text-green-700">0 Completed</span><button id="admin-clear-history-btn" type="button" class="clear-chat-btn">🗑 CLEAR HISTORY</button></div></div>
+      <div id="admin-delivery-log"></div>
+    </div>
+
+      <div class="clear-chat-row"><div class="section-kicker">PRIVATE CHAT</div><button id="admin-clear-chat-btn" type="button" class="clear-chat-btn">🗑 CLEAR CHAT</button></div><div id="admin-chat-messages" class="chat-scroll space-y-3 bg-slate-50 rounded-2xl p-3 min-h-[350px]"></div>
+      <form onsubmit="sendAdminMessage(event)" class="flex gap-2 mt-3">
+        <input id="admin-chat-input" class="flex-1 border rounded-xl px-3 py-3" placeholder="Message selected rider">
+        <button id="admin-chat-send" class="bg-red-600 text-white px-4 rounded-xl font-bold"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+
+      <div class="mt-5 border-t pt-5 text-center">
+        <div class="text-xs font-bold text-slate-500 mb-3">ADMIN WALKIE-TALKIE</div>
+        <button id="admin-ptt-btn"
+          onpointerdown="startAdminPTT(event)"
+          onpointerup="stopAdminPTT(event)"
+          onpointercancel="stopAdminPTT(event)"
+          class="w-28 h-28 rounded-full bg-slate-950 text-white shadow-xl touch-none">
+          <i class="fa-solid fa-microphone text-3xl"></i>
+        </button>
+        <div id="admin-ptt-text" class="font-bold mt-3 text-sm">PRESS &amp; HOLD</div>
+        <div id="admin-ptt-status" class="text-xs text-slate-500 mt-1">Select a rider, then hold to talk</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<div id="clear-chat-dialog" class="clear-chat-dialog hidden" role="dialog" aria-modal="true"><div class="clear-chat-box"><div class="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-xl mb-4">🗑</div><h3 class="text-lg font-extrabold text-slate-900">Clear this conversation?</h3><p id="clear-chat-description" class="text-sm text-slate-500 mt-2 leading-6">This will permanently remove the conversation from the cloud. This action cannot be undone.</p><div class="flex gap-2 mt-6"><button id="clear-chat-cancel" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">Cancel</button><button id="clear-chat-confirm" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">Clear Chat</button></div></div></div>
+<div id="clear-history-dialog" class="clear-chat-dialog hidden" role="dialog" aria-modal="true"><div class="clear-chat-box"><div class="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-xl mb-4">🗑</div><h3 class="text-lg font-extrabold text-slate-900">Clear delivery history?</h3><p id="clear-history-description" class="text-sm text-slate-500 mt-2 leading-6">This removes the completed delivery history from this portal only. Operational orders, delivery records and emergency records remain safely stored in the cloud.</p><div class="flex gap-2 mt-6"><button id="clear-history-cancel" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">Cancel</button><button id="clear-history-confirm" type="button" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">Clear History</button></div></div></div>
+<div id="admin-section-clear-dialog" class="clear-chat-dialog hidden" role="dialog" aria-modal="true"><div class="clear-chat-box"><div class="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-xl mb-4">🗑</div><h3 class="text-lg font-extrabold text-slate-900">Clear section history?</h3><p id="admin-section-clear-description" class="text-sm text-slate-500 mt-2 leading-6">This clears the selected section from this Admin portal view only. Cloud records are not deleted.</p><div class="flex gap-2 mt-6"><button id="admin-section-clear-cancel" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">Cancel</button><button id="admin-section-clear-confirm" type="button" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-extrabold">Clear History</button></div></div></div>
+
+<div id="toast-notification" class="toast">
+  <div class="bg-slate-950 text-white rounded-2xl shadow-2xl p-4 w-[320px]">
+    <div class="flex gap-3">
+      <div id="toast-icon" class="text-red-400"><i class="fa-solid fa-circle-info"></i></div>
+      <div><div id="toast-title" class="font-bold"></div><div id="toast-desc" class="text-xs text-slate-300 mt-1"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   BADIA SPICES — SINGLE-FILE CONNECTION-SAFE APPLICATION
+   ========================================================== */
+const SUPABASE_URL="https://svlzlkutlysfscveytcl.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_4FoG_HAkeBZCDknXwhxrSg_qbqXTCYv";
+// Admin authentication is handled by Supabase Auth. No admin password is stored in this HTML.
+
+let db=null, cloudReady=false, cloudStarting=false, currentUser=null;
+let appRole=null, riderRow=null, selectedRiderId=null;
+let riders=[], orders=[], messages=[];
+let adminUser=null, sosAlerts=[];
+let map=null, riderMarkers={}, gpsWatchId=null, mediaRecorder=null, audioChunks=[];
+let channels=[], clockTimer=null;
+
+const $=id=>document.getElementById(id);
+
+/* ---------- NOTIFICATION SOUND SYSTEM ---------- */
+let notificationAudioContext=null;
+let notificationAudioUnlocked=false;
+
+function unlockNotificationAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    if(!notificationAudioContext) notificationAudioContext=new AC();
+    if(notificationAudioContext.state==='suspended') notificationAudioContext.resume();
+    notificationAudioUnlocked=true;
+  }catch(e){console.warn('BADIA notification audio unavailable:',e);}
+}
+
+function playNotificationSound(kind='info'){
+  try{
+    unlockNotificationAudio();
+    if(!notificationAudioContext)return;
+    const ctx=notificationAudioContext;
+    if(ctx.state==='suspended')return;
+    const now=ctx.currentTime;
+    const gain=ctx.createGain();
+    gain.gain.setValueAtTime(0.0001,now);
+    gain.gain.exponentialRampToValueAtTime(kind==='error'?0.075:0.11,now+0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001,now+0.34);
+    gain.connect(ctx.destination);
+
+    const osc=ctx.createOscillator();
+    osc.type='sine';
+    const base=kind==='success'?660:(kind==='error'?260:(kind==='dispatch'?520:(kind==='message'?740:440)));
+    osc.frequency.setValueAtTime(base,now);
+    osc.frequency.exponentialRampToValueAtTime(base*1.18,now+0.12);
+    osc.frequency.exponentialRampToValueAtTime(base*0.94,now+0.30);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now+0.34);
+
+    if(kind==='success'||kind==='dispatch'||kind==='message'){
+      const g2=ctx.createGain();
+      g2.gain.setValueAtTime(0.0001,now+0.09);
+      g2.gain.exponentialRampToValueAtTime(0.07,now+0.11);
+      g2.gain.exponentialRampToValueAtTime(0.0001,now+0.46);
+      g2.connect(ctx.destination);
+      const o2=ctx.createOscillator();
+      o2.type='sine';
+      o2.frequency.setValueAtTime(base*1.28,now+0.09);
+      o2.frequency.exponentialRampToValueAtTime(base*1.08,now+0.40);
+      o2.connect(g2);
+      o2.start(now+0.09);
+      o2.stop(now+0.46);
+    }
+  }catch(e){console.warn('BADIA notification sound error:',e);}
+}
+
+function notificationKind(title,ok=false){
+  const s=String(title||'').toLowerCase();
+  if(/error|failed|unavailable|denied|blocked|cannot|failed/.test(s))return 'error';
+  if(/sos|emergency/.test(s))return 'error';
+  if(/dispatch|assigned/.test(s))return 'dispatch';
+  if(/message|chat|voice/.test(s))return 'message';
+  if(ok||/completed|accepted|success|online|started|created|sent|granted/.test(s))return 'success';
+  return 'info';
+}
+
+/* Every in-app toast notification now has an audible alert. */
+function toast(title,desc='',ok=false){
+  $("toast-title").textContent=title;
+  $("toast-desc").textContent=desc;
+  $("toast-icon").innerHTML=ok?'<i class="fa-solid fa-circle-check text-green-400"></i>':'<i class="fa-solid fa-circle-info text-red-400"></i>';
+  $("toast-notification").classList.add("show");
+  playNotificationSound(notificationKind(title,ok));
+  clearTimeout(window.__toast);
+  window.__toast=setTimeout(()=>$("toast-notification").classList.remove("show"),3500);
+}
+
+function setConnection(message,good=false){
+  $("sync-text").textContent=message;
+  $("sync-dot").className="sync-dot "+(good?"ok":"bad");
+  $("connection-message").textContent=message;
+  if($("admin-cloud-state")) $("admin-cloud-state").textContent=good?"Online":"Offline";
+  if($("rider-cloud-pill")) $("rider-cloud-pill").innerHTML='<span class="sync-dot '+(good?'ok':'bad')+'"></span>'+message;
+}
+
+function showView(id){
+  document.querySelectorAll(".view-section").forEach(x=>x.classList.remove("active"));
+  $(id).classList.add("active");
+  updateHeader();
+}
+
+function updateHeader(){
+  if(appRole==="rider"){
+    $("header-auth-controls").innerHTML='<span class="text-xs text-slate-300">Rider Mode</span>';
+  }else if(appRole==="admin"){
+    $("header-auth-controls").innerHTML='<span class="text-xs text-slate-300">Admin Mode</span>';
+  }else $("header-auth-controls").innerHTML="";
+}
+
+function setAuthMode(mode){
+  $("form-rider-auth").classList.toggle("hidden",mode!=="rider");
+  $("form-admin-auth").classList.toggle("hidden",mode!=="admin");
+  $("auth-tab-rider").className=mode==="rider"?"rounded-lg py-2.5 font-bold bg-white shadow":"rounded-lg py-2.5 font-bold text-slate-500";
+  $("auth-tab-admin").className=mode==="admin"?"rounded-lg py-2.5 font-bold bg-white shadow":"rounded-lg py-2.5 font-bold text-slate-500";
+}
+
+async function localAdminLogin(){
+  appRole="admin";
+  showView("view-admin-portal");
+  setTimeout(initMap,50);
+  renderAll();
+  toast("Admin access granted","Secure Admin Command Center is available.",true);
+}
+
+async function handleAdminLogin(e){
+  e.preventDefault();
+  const email=$("admin-input-email").value.trim().toLowerCase();
+  const pass=$("admin-input-pass").value;
+  const btn=$("admin-login-btn");
+  if(!email||!pass)return;
+  btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i>Signing in...';
+  try{
+    await ensureCloud();
+    if(!cloudReady||!db) throw new Error("Cloud authentication is unavailable. "+(window.__cloudError||""));
+
+    // A rider session uses Supabase Anonymous Auth. Explicitly end that
+    // session before switching to an email/password Admin session. This
+    // prevents a persisted anonymous session from interfering with Admin RLS.
+    const existingAdminSession=(await db.auth.getSession()).data?.session;
+    if(existingAdminSession?.user){
+      await db.auth.signOut();
+      currentUser=null;
+    }
+
+    const {data,error}=await db.auth.signInWithPassword({email,password:pass});
+    if(error) throw error;
+    currentUser=data.user;
+    const {data:admin,error:adminError}=await db.from("admin_users").select("id,email,role").eq("id",currentUser.id).maybeSingle();
+    if(adminError) throw adminError;
+    if(!admin){
+      await db.auth.signOut();
+      currentUser=null;
+      await ensureCloud();
+      throw new Error("This account is authenticated but is not authorized as a Badia administrator.");
+    }
+    adminUser=admin;
+    await loadCloudData();
+    subscribeRealtime();
+    await localAdminLogin();
+    $("admin-input-pass").value="";
+  }catch(err){
+    console.error("BADIA ADMIN AUTH ERROR:",err);
+    toast("Admin sign-in failed",cleanError(err));
+  }finally{
+    btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-shield-halved mr-2"></i>Secure Admin Sign In';
+  }
+}
+
+async function handleRiderLogin(e){
+  e.preventDefault();
+  const name=$("rider-input-name").value.trim();
+  const phone=$("rider-input-phone").value.trim();
+  if(!name||!phone) return;
+
+  const btn=$("rider-login-btn");
+  btn.disabled=true; btn.textContent="Connecting rider...";
+  try{
+    await ensureCloud();
+    if(!cloudReady||!db) throw new Error("Cloud authentication is unavailable. "+(window.__cloudError||""));
+
+    // Rider portal always uses a fresh Anonymous Auth identity. If an Admin
+    // session is still persisted in this browser, replace it cleanly first.
+    const existingRiderSession=(await db.auth.getSession()).data?.session;
+    if(existingRiderSession?.user && existingRiderSession.user.is_anonymous!==true){
+      await db.auth.signOut();
+      currentUser=null;
+      const anonRes=await db.auth.signInAnonymously();
+      if(anonRes.error) throw anonRes.error;
+      currentUser=anonRes.data.user;
+    }else if(!currentUser){
+      const anonRes=await db.auth.signInAnonymously();
+      if(anonRes.error) throw anonRes.error;
+      currentUser=anonRes.data.user;
+    }
+    if(!currentUser || currentUser.is_anonymous!==true) throw new Error("A fresh rider authentication session could not be created.");
+
+    riderRow=await upsertRider(name,phone);
+    /* RLS now scopes rider data to the authenticated rider, so refresh cloud data after the rider row exists. */
+    await loadCloudData();
+    subscribeRealtime();
+    appRole="rider";
+    showView("view-rider-portal");
+    $("rider-display-name").textContent=name;
+    $("rider-display-phone").textContent=phone;
+    $("rider-avatar-initial").textContent=name.charAt(0).toUpperCase();
+    switchRiderTab("gps");
+    // Automatically start GPS tracking after a successful rider login.
+    // The browser may still show its normal location permission prompt.
+    requestDeviceGeolocation();
+    startClock();
+    renderRiderDispatches();
+    toast("Rider shift started","You are connected to Badia cloud.",true);
+  }catch(err){
+    console.error(err);
+    toast("Rider login failed",cleanError(err));
+    setConnection("Connection failed",false);
+  }finally{
+    btn.disabled=false; btn.textContent="Launch Rider Shift & Chat";
+  }
+}
+
+function cleanError(err){
+  if(!err) return "Unknown error";
+  return err.message||String(err);
+}
+
+/* ---------- CLOUD INITIALIZATION ---------- */
+async function ensureCloud(){
+  if(cloudReady&&db&&currentUser) return true;
+  if(cloudStarting){
+    for(let i=0;i<50;i++){
+      await new Promise(r=>setTimeout(r,100));
+      if(cloudReady&&currentUser) return true;
+    }
+    return false;
+  }
+  cloudStarting=true;
+  setConnection("Connecting to Cloud...",false);
+
+  try{
+    if(!window.supabase||typeof window.supabase.createClient!=="function"){
+      throw new Error("Supabase JavaScript library did not load. Check internet access and reload.");
+    }
+
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+      auth:{
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:false
+      }
+    });
+
+    db.auth.onAuthStateChange((event,session)=>{
+      currentUser=session&&session.user?session.user:null;
+      if(event==="SIGNED_OUT" && appRole==="admin"){appRole=null;adminUser=null;showView("view-auth");setAuthMode("admin");}
+    });
+
+    const sessionRes=await db.auth.getSession();
+    if(sessionRes.error) throw sessionRes.error;
+
+    if(sessionRes.data&&sessionRes.data.session&&sessionRes.data.session.user){
+      currentUser=sessionRes.data.session.user;
+    }else{
+      const signRes=await db.auth.signInAnonymously();
+      if(signRes.error) throw signRes.error;
+      currentUser=signRes.data.user;
+    }
+
+    if(!currentUser) throw new Error("Supabase returned no authenticated user.");
+
+    cloudReady=true;
+    window.__cloudError="";
+    setConnection("Cloud connected",true);
+
+    await loadCloudData();
+    subscribeRealtime();
+    return true;
+  }catch(err){
+    cloudReady=false;
+    window.__cloudError=cleanError(err);
+    setConnection("Connection failed",false);
+    $("connection-message").textContent="Cloud connection failed: "+cleanError(err);
+    console.error("BADIA SUPABASE ERROR:",err);
+    return false;
+  }finally{
+    cloudStarting=false;
+  }
+}
+
+async function loadCloudData(){
+  if(!cloudReady) return;
+  try{
+    const [r,o,m]=await Promise.all([
+      db.from("riders").select("*").order("created_at",{ascending:false}),
+      db.from("orders").select("*").order("created_at",{ascending:false}),
+      db.from("messages").select("*").order("created_at",{ascending:true})
+    ]);
+    if(r.error) throw r.error;
+    if(o.error) throw o.error;
+    if(m.error) throw m.error;
+    riders=r.data||[]; orders=o.data||[]; messages=m.data||[];
+    renderAll();
+  }catch(err){
+    console.error("Cloud data load error:",err);
+    toast("Cloud data error",cleanError(err));
+  }
+}
+
+function subscribeRealtime(){
+  if(!db||!cloudReady) return;
+  channels.forEach(c=>{try{db.removeChannel(c)}catch(e){}});
+  channels=[];
+
+  ["riders","orders","messages"].forEach(table=>{
+    const ch=db.channel("badia-"+table+"-"+Date.now()+"-"+Math.random());
+    ch.on("postgres_changes",{event:"*",schema:"public",table},payload=>{
+      if(table==="riders"){
+        if(payload.eventType==="INSERT") riders.unshift(payload.new);
+        else if(payload.eventType==="UPDATE") riders=riders.map(x=>x.id===payload.new.id?payload.new:x);
+        else if(payload.eventType==="DELETE") riders=riders.filter(x=>x.id!==payload.old.id);
+      }
+      if(table==="orders"){
+        if(payload.eventType==="INSERT"){
+          orders.unshift(payload.new);
+          if(appRole==="rider" && riderRow && payload.new.rider_id===riderRow.id){
+            toast("New dispatch received","A new order has been assigned to you.",true);
+          }
+        }
+        else if(payload.eventType==="UPDATE"){
+          const previous=orders.find(x=>x.id===payload.new.id);
+          orders=orders.map(x=>x.id===payload.new.id?payload.new:x);
+          if(previous && previous.status!==payload.new.status){
+            if(appRole==="admin" && payload.new.status==="Accepted") toast("Dispatch accepted",`${payload.new.rider||"Rider"} has accepted the delivery dispatch.`,true);
+            if(appRole==="admin" && payload.new.status==="On the Way") toast("Rider On The Way",`${payload.new.rider||"Rider"} has started the delivery.`,true);
+            if(appRole==="admin" && payload.new.status==="Delivered") toast("Delivery Completed",`Order for ${payload.new.customer||"customer"} has been successfully delivered.`,true);
+          }
+        }
+        else if(payload.eventType==="DELETE") orders=orders.filter(x=>x.id!==payload.old.id);
+      }
+      if(table==="messages"){
+        if(payload.eventType==="INSERT"){
+          messages.push(payload.new);
+          if(payload.new.type==="sos_event" && appRole==="admin") toast("SOS EMERGENCY",`${payload.new.sender||"Rider"} has triggered an emergency alert.`,false);
+          const incomingRole=payload.new.sender_role;
+          const isIncoming=(appRole==="admin" && incomingRole==="rider") || (appRole==="rider" && incomingRole==="admin");
+          if(isIncoming && payload.new.rider_id && (!riderRow || payload.new.rider_id===riderRow.id)){
+            const isAudio=payload.new.type==="audio";
+            toast(isAudio?"New voice message":"New message",isAudio?"A new voice message has arrived.":`New message from ${payload.new.sender||"Admin"}.`,true);
+          }
+        }
+        else if(payload.eventType==="UPDATE") messages=messages.map(x=>x.id===payload.new.id?payload.new:x);
+        else if(payload.eventType==="DELETE") messages=messages.filter(x=>x.id!==payload.old.id);
+      }
+      renderAll();
+    }).subscribe();
+    channels.push(ch);
+  });
+}
+
+/* ---------- RIDERS ---------- */
+async function upsertRider(name,phone){
+  const row={
+    user_id:currentUser.id,
+    name,phone,status:"Online",
+    login_time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}),
+    login_timestamp:new Date().toISOString(),
+    last_seen:new Date().toISOString()
+  };
+  const {data,error}=await db.from("riders").upsert(row,{onConflict:"user_id"}).select().single();
+  if(error) throw error;
+  riders=riders.filter(x=>x.id!==data.id);
+  riders.unshift(data);
+  return data;
+}
+
+async function updateRiderLocation(lat,lng){
+  if(!cloudReady||!riderRow||!db) return;
+  const {data,error}=await db.from("riders").update({
+    lat,lng,last_seen:new Date().toISOString(),status:"Online"
+  }).eq("id",riderRow.id).select().single();
+  if(!error&&data){
+    riderRow=data;
+    riders=riders.map(x=>x.id===data.id?data:x);
+    renderFleet();
+    updateMap();
+  }
+}
+
+function requestDeviceGeolocation(){
+  if(!navigator.geolocation){
+    $("rider-gps-status-box").textContent="This browser does not support GPS.";
+    return;
+  }
+  $("rider-gps-status-box").textContent="Requesting GPS permission...";
+  if(gpsWatchId!==null) navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId=navigator.geolocation.watchPosition(
+    pos=>{
+      const {latitude,longitude,accuracy}=pos.coords;
+      $("rider-gps-status-box").innerHTML=`GPS active<br>Lat: ${latitude.toFixed(6)}<br>Lng: ${longitude.toFixed(6)}<br>Accuracy: ±${Math.round(accuracy)}m`;
+      updateRiderLocation(latitude,longitude);
+    },
+    err=>{
+      $("rider-gps-status-box").textContent="GPS error: "+err.message+" — use HTTPS/localhost if browser blocks location.";
+      toast("GPS unavailable",err.message);
+    },
+    {enableHighAccuracy:true,maximumAge:10000,timeout:20000}
+  );
+}
+
+/* ---------- RIDER CHAT ---------- */
+function switchRiderTab(tab){
+  const tabs=["gps","dispatch","chat","log","audio"];
+  tabs.forEach(t=>{
+    const b=$("rtab-"+t),p=$("rider-subtab-"+t); if(b){b.classList.toggle("bg-red-600",t===tab);b.classList.toggle("text-white",t===tab);} if(p)p.classList.toggle("hidden",t!==tab);
+  });
+  if(tab==="log")renderRiderDeliveryLog();
+}
+
+async function sendRiderMessage(e){
+  e.preventDefault();
+  const input=$("rider-chat-input"), text=input.value.trim();
+  if(!text||!cloudReady||!riderRow) return;
+  input.value="";
+  const {error}=await db.from("messages").insert([{
+    rider_id:riderRow.id,sender:riderRow.name,sender_role:"rider",
+    text,type:"text",time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+  }]);
+  if(error){toast("Message failed",cleanError(error));input.value=text;}
+}
+
+async function sendAdminMessage(e){
+  e.preventDefault();
+  const input=$("admin-chat-input"), text=input.value.trim();
+  if(!text||!cloudReady||!selectedRiderId) return;
+  input.value="";
+  const {error}=await db.from("messages").insert([{
+    rider_id:selectedRiderId,sender:"Admin",sender_role:"admin",
+    text,type:"text",time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+  }]);
+  if(error){toast("Message failed",cleanError(error));input.value=text;}
+}
+
+function renderMessages(container,arr,role){
+  container.innerHTML="";
+  arr.forEach(m=>{
+    const mine=m.sender_role===role;
+    const wrap=document.createElement("div");
+    wrap.className="flex "+(mine?"justify-end":"justify-start");
+    const box=document.createElement("div");
+    box.className="message rounded-2xl px-3 py-2 "+(mine?(role==="admin"?"bg-red-600 text-white":"bg-red-600 text-white"):"bg-white border text-slate-800");
+    if(m.type==="audio"&&m.audio_url){
+      const audio=document.createElement("audio"); audio.controls=true; audio.src=m.audio_url; audio.className="max-w-full";
+      box.appendChild(audio);
+    }else{
+      const t=document.createElement("div");t.textContent=m.text||"";box.appendChild(t);
+    }
+    const time=document.createElement("div");time.className="text-[10px] opacity-60 mt-1";time.textContent=m.time||"";
+    box.appendChild(time);wrap.appendChild(box);container.appendChild(wrap);
+  });
+  container.scrollTop=container.scrollHeight;
+}
+
+function renderRiderChat(){
+  if(!riderRow) return;
+  const arr=messages.filter(m=>m.rider_id===riderRow.id && m.type!=="delivery_event");
+  renderMessages($("rider-chat-messages"),arr,"rider");
+}
+
+/* ---------- AUDIO ---------- */
+async function startPTTRecording(){
+  if(mediaRecorder&&mediaRecorder.state==="recording") return;
+  if(!riderRow){
+    toast("Rider unavailable","Your rider session is not active.");
+    return;
+  }
+  await startVoiceRecording("rider",riderRow.id,{
+    button:"ptt-btn",buttonText:"ptt-btn-text",status:"rider-ptt-status"
+  });
+}
+
+async function startAdminPTT(){
+  if(!selectedRiderId){
+    toast("Select a rider first","Choose a rider from Fleet Timestamps before using the Admin Walkie-Talkie.");
+    return;
+  }
+  await startVoiceRecording("admin",selectedRiderId,{
+    button:"admin-ptt-btn",buttonText:"admin-ptt-text",status:"admin-ptt-status"
+  });
+}
+
+function stopPTTRecording(){
+  stopVoiceRecording({button:"ptt-btn",buttonText:"ptt-btn-text",status:"rider-ptt-status"});
+}
+
+function stopAdminPTT(){
+  stopVoiceRecording({button:"admin-ptt-btn",buttonText:"admin-ptt-text",status:"admin-ptt-status"});
+}
+
+async function startVoiceRecording(senderRole,targetRiderId,ui){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast("Microphone unavailable","Use HTTPS or localhost and allow microphone access.");
+    return;
+  }
+  if(!cloudReady||!db){
+    toast("Cloud unavailable","Voice communication needs the cloud connection.");
+    return;
+  }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const preferred=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].find(x=>MediaRecorder.isTypeSupported(x));
+    mediaRecorder=new MediaRecorder(stream,preferred?{mimeType:preferred}:undefined);
+    audioChunks=[];
+    mediaRecorder.__badiaRole=senderRole;
+    mediaRecorder.__badiaTarget=targetRiderId;
+    mediaRecorder.__badiaUI=ui;
+    mediaRecorder.ondataavailable=e=>{if(e.data.size)audioChunks.push(e.data)};
+    mediaRecorder.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(audioChunks,{type:mediaRecorder.mimeType||"audio/webm"});
+      const role=mediaRecorder.__badiaRole;
+      const target=mediaRecorder.__badiaTarget;
+      const savedUI=mediaRecorder.__badiaUI;
+      mediaRecorder=null;
+      await uploadVoiceMessage(blob,role,target,savedUI);
+    };
+    mediaRecorder.start();
+    $(ui.button).classList.add("pulse");
+    $(ui.buttonText).textContent="RECORDING...";
+    $(ui.status).textContent="Release to send";
+  }catch(err){
+    toast("Microphone blocked",err.message);
+  }
+}
+
+function stopVoiceRecording(ui){
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+    const recorderUI=mediaRecorder.__badiaUI;
+    mediaRecorder.stop();
+    if(recorderUI){
+      $(recorderUI.button).classList.remove("pulse");
+      $(recorderUI.buttonText).textContent="PRESS & HOLD";
+      $(recorderUI.status).textContent="Uploading...";
+    }
+  }
+}
+
+async function uploadVoiceMessage(blob,senderRole,targetRiderId,ui){
+  if(!cloudReady||!db){
+    toast("Cloud unavailable","Voice message cannot be uploaded.");
+    return;
+  }
+  try{
+    const ext=(blob.type||"audio/webm").includes("mp4")?"mp4":(blob.type||"").includes("ogg")?"ogg":"webm";
+    const path=`${targetRiderId}/${senderRole}-${Date.now()}.${ext}`;
+    const up=await db.storage.from("voice-messages").upload(path,blob,{
+      contentType:blob.type||"audio/webm",upsert:false
+    });
+    if(up.error) throw up.error;
+    const pub=db.storage.from("voice-messages").getPublicUrl(path);
+    const sender=senderRole==="admin"?"Admin":(riderRow?riderRow.name:"Rider");
+    const {error}=await db.from("messages").insert([{
+      rider_id:targetRiderId,sender,sender_role:senderRole,
+      text:"Voice message",type:"audio",audio_url:pub.data.publicUrl,
+      time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+    }]);
+    if(error) throw error;
+    if(ui&&$(ui.status)) $(ui.status).textContent="Voice message sent";
+    toast("Voice sent",senderRole==="admin"?"Rider received your voice message.":"Admin received your voice message.",true);
+  }catch(err){
+    if(ui&&$(ui.status)) $(ui.status).textContent="Upload failed";
+    toast("Voice upload failed",cleanError(err));
+  }
+}
+
+
+/* ---------- RIDER DISPATCH INBOX ---------- */
+function statusClass(status){
+  if(status==="Accepted")return "status-accepted";
+  if(status==="On the Way")return "status-onway";
+  if(status==="Delivered")return "status-delivered";
+  return "status-pending";
+}
+function renderRiderDispatches(){
+  const list=$("rider-dispatch-list"),count=$("rider-dispatch-count");
+  if(!list||!count)return;
+  if(!riderRow){count.textContent="0";list.innerHTML='<div class="text-sm text-slate-400 text-center py-12">Rider session not active.</div>';return;}
+  const assigned=orders.filter(o=>o.rider_id===riderRow.id&&o.status!=="Delivered").sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  const pending=assigned.filter(o=>o.status==="Pending"||o.status==="New");
+  count.textContent=pending.length; list.innerHTML="";
+  if(!assigned.length){list.innerHTML='<div class="text-sm text-slate-400 text-center py-12">No dispatches assigned to you yet.</div>';return;}
+  assigned.forEach(o=>{
+    const card=document.createElement("div");card.className="rounded-2xl p-4 border border-white/10 bg-white/10";
+    let action="";
+    if(o.status==="Pending"||o.status==="New") action=`<button onclick="acceptDispatch('${o.id}')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl">Accept Dispatch</button>`;
+    else if(o.status==="Accepted") action=`<div class="text-center py-2.5 rounded-xl bg-blue-500/20 text-blue-300 font-bold text-sm">✓ DISPATCH ACCEPTED</div><button onclick="startDelivery('${o.id}')" class="mt-3 w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-sm">🛵 START DELIVERY / ON THE WAY</button>`;
+    else if(o.status==="On the Way") action=`<div class="text-center py-2.5 rounded-xl bg-violet-500/20 text-violet-300 font-bold text-sm">🛵 ON THE WAY</div><label class="block mt-3 text-xs text-slate-300 font-bold">PROOF OF DELIVERY PHOTO <span class="text-red-400">(REQUIRED)</span><input id="proof-${o.id}" type="file" accept="image/*" capture="environment" onchange="previewProof('${o.id}')" class="mt-2 block w-full text-xs text-slate-300"><div id="proof-preview-${o.id}" class="mt-2 hidden"></div></label><button onclick="markDelivered('${o.id}')" class="mt-3 w-full py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-extrabold text-sm">✓ MARK AS DELIVERED</button>`;
+    card.innerHTML=`<div class="flex justify-between items-start gap-3"><div><div class="text-xs text-slate-400">BADIA DISPATCH</div><div class="font-extrabold text-lg">${escapeHtml(o.customer)}</div></div><span class="status-chip ${statusClass(o.status)}">${escapeHtml(o.status||"Pending")}</span></div><div class="mt-3 text-sm text-slate-300"><b>Order:</b> ${escapeHtml(o.qty)}</div><div class="mt-1 text-sm text-slate-300"><b>Destination:</b> ${escapeHtml(o.destination||"Not specified")}</div><div class="text-xs text-slate-400 mt-1">Created: ${escapeHtml(o.time||formatDate(o.created_at))}</div><div class="mt-4">${action}</div>`;
+    list.appendChild(card);
+  });
+}
+
+async function insertDeliveryEvent(riderId,riderName,text,audio_url=null){
+  return db.from("messages").insert([{rider_id:riderId,sender:riderName,sender_role:"rider",text,type:"delivery_event",audio_url,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+}
+
+async function acceptDispatch(orderId){
+  if(!cloudReady||!db||!riderRow){toast("Cloud unavailable","Cannot accept this dispatch right now.");return;}
+  const order=orders.find(o=>o.id===orderId);if(!order)return;
+  const {data,error}=await db.from("orders").update({status:"Accepted"}).eq("id",orderId).eq("rider_id",riderRow.id).eq("status","Pending").select().single();
+  if(error){toast("Dispatch update failed",cleanError(error));return;}
+  orders=orders.map(o=>o.id===data.id?data:o);
+  const ev=await insertDeliveryEvent(riderRow.id,riderRow.name,"Delivery accepted: "+orderId);
+  if(ev.error)console.warn(ev.error);
+  renderAll();toast("Dispatch accepted","Admin has been notified.",true);
+}
+
+async function startDelivery(orderId){
+  if(!cloudReady||!db||!riderRow)return;
+  const order=orders.find(o=>o.id===orderId);if(!order||order.status!=="Accepted")return;
+  const {data,error}=await db.from("orders").update({status:"On the Way"}).eq("id",orderId).eq("rider_id",riderRow.id).eq("status","Accepted").select().single();
+  if(error){toast("Status update failed",cleanError(error));return;}
+  orders=orders.map(o=>o.id===data.id?data:o);
+  const ev=await insertDeliveryEvent(riderRow.id,riderRow.name,"Delivery started: "+orderId);if(ev.error)console.warn(ev.error);
+  renderAll();toast("Delivery started","Admin can now see that you are on the way.",true);
+}
+
+async function uploadProofFile(orderId,file){
+  if(!file||!db)return null;
+  if(file.size>8*1024*1024)throw new Error("Proof image must be 8 MB or smaller.");
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+  const path=`${riderRow.id}/${orderId}-${Date.now()}.${ext}`;
+  const up=await db.storage.from("delivery-proofs").upload(path,file,{contentType:file.type||"image/jpeg",upsert:false});
+  if(up.error)throw up.error;
+  const pub=db.storage.from("delivery-proofs").getPublicUrl(path);
+  return pub.data.publicUrl;
+}
+
+function previewProof(orderId){
+  const input=$("proof-"+orderId),box=$("proof-preview-"+orderId);
+  if(!input||!box)return;
+  const file=input.files&&input.files[0];
+  if(!file){box.classList.add("hidden");box.innerHTML="";return;}
+  if(!file.type.startsWith("image/")){box.classList.add("hidden");box.innerHTML="";toast("Invalid proof","Please select an image file.");return;}
+  const url=URL.createObjectURL(file);
+  box.classList.remove("hidden");
+  box.innerHTML=`<div class="text-[11px] text-slate-400 mb-1">Proof preview</div><img src="${url}" class="proof-thumb" alt="Proof preview">`;
+}
+
+async function markDelivered(orderId){
+  if(!cloudReady||!db||!riderRow){toast("Cloud unavailable","Cannot complete this delivery right now.");return;}
+  const order=orders.find(o=>o.id===orderId);if(!order)return;
+  if(order.status!=="On the Way"){toast("Delivery not started","Start the delivery before marking it delivered.");return;}
+  const input=$("proof-"+orderId);const file=input&&input.files?input.files[0]:null;
+  if(!file){toast("Proof required","Take or select a Proof of Delivery photo before completing this delivery.");return;}
+  try{
+    const proofUrl=await uploadProofFile(orderId,file);
+    const {data,error}=await db.from("orders").update({status:"Delivered"}).eq("id",orderId).eq("rider_id",riderRow.id).eq("status","On the Way").select().single();
+    if(error)throw error;
+    orders=orders.map(o=>o.id===data.id?data:o);
+    const evs=[{rider_id:riderRow.id,sender:riderRow.name,sender_role:"rider",text:"Delivery completed: "+orderId,type:"delivery_event",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}];
+    if(proofUrl)evs.push({rider_id:riderRow.id,sender:riderRow.name,sender_role:"rider",text:"Delivery proof: "+orderId,type:"delivery_event",audio_url:proofUrl,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})});
+    const ev=await db.from("messages").insert(evs);if(ev.error)console.warn(ev.error);
+    renderAll();toast("Delivery Completed",proofUrl?"Delivery completed with proof of delivery.":"Delivery completed successfully.",true);
+  }catch(err){toast("Delivery completion failed",cleanError(err));}
+}
+function getDeliveryEvents(order){
+  const ev=(messages||[]).filter(m=>m.rider_id===order.rider_id&&m.type==="delivery_event");
+  const accepted=ev.find(m=>m.text==="Delivery accepted: "+order.id&&new Date(m.created_at||0)>=new Date(order.created_at||0));
+  const onway=ev.find(m=>m.text==="Delivery started: "+order.id&&new Date(m.created_at||0)>=new Date(order.created_at||0));
+  const delivered=ev.find(m=>m.text==="Delivery completed: "+order.id&&new Date(m.created_at||0)>=new Date(order.created_at||0));
+  const proof=ev.find(m=>m.text==="Delivery proof: "+order.id&&new Date(m.created_at||0)>=new Date(order.created_at||0));
+  return {accepted:accepted?accepted.created_at:null,onway:onway?onway.created_at:null,delivered:delivered?delivered.created_at:null,proof:proof?proof.audio_url:null};
+}
+function renderRiderDeliveryLog(){
+  const box=$("rider-delivery-log"),count=$("rider-delivered-count");if(!box||!riderRow)return;
+  const hidden=getHiddenHistoryIds("rider",riderRow.id);const completed=orders.filter(o=>o.rider_id===riderRow.id&&o.status==="Delivered"&&!hidden.has(String(o.id))).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  if(count)count.textContent=`${completed.length} Completed`;
+  if(!completed.length){box.innerHTML='<div class="log-empty">No completed deliveries yet.</div>';return;}
+  box.innerHTML=completed.map(o=>{const e=getDeliveryEvents(o);return `<div class="delivery-log-card mb-3"><div class="flex justify-between gap-3"><div><div class="font-extrabold">${escapeHtml(o.customer)}</div><div class="text-xs text-slate-400 mt-1">${escapeHtml(o.qty)}</div><div class="text-xs text-slate-400 mt-1"><b>Destination:</b> ${escapeHtml(o.destination||"Not specified")}</div></div><span class="status-chip status-delivered">✓ DELIVERED</span></div><div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-3 text-[11px] text-slate-400"><div><b>Dispatched</b><br>${escapeHtml(o.time||formatDate(o.created_at))}</div><div><b>Accepted</b><br>${escapeHtml(formatDate(e.accepted))}</div><div><b>On Way</b><br>${escapeHtml(formatDate(e.onway))}</div><div><b>Delivered</b><br>${escapeHtml(formatDate(e.delivered))}</div></div>${e.proof?`<div class="mt-3 flex items-center gap-3"><img src="${escapeHtml(e.proof)}" class="proof-thumb" alt="Proof of delivery"><a href="${escapeHtml(e.proof)}" target="_blank" rel="noopener" class="text-xs font-bold text-red-600">View Proof of Delivery</a></div>`:""}</div>`}).join("");
+}
+function renderAdminDeliveryLog(){
+  const box=$("admin-delivery-log"),count=$("admin-delivered-count");if(!box)return;
+  const q=(window.adminDeliverySearch||"").toLowerCase();
+  const hidden=getHiddenHistoryIds("admin","all");const completed=orders.filter(o=>o.status==="Delivered"&&!hidden.has(String(o.id))).filter(o=>!q||[o.id,o.customer,o.qty,o.destination,o.rider].join(" ").toLowerCase().includes(q)).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  if(count)count.textContent=`${completed.length} Completed`;
+  if(!completed.length){box.innerHTML='<div class="log-empty">No completed deliveries match the current search.</div>';return;}
+  box.innerHTML=`<div class="mb-3"><input id="admin-delivery-search" value="${escapeHtml(window.adminDeliverySearch||"")}" class="w-full border rounded-xl px-3 py-2.5 text-sm" placeholder="Search completed deliveries by customer, rider or order ID"></div><div class="log-table-wrap"><table class="log-table"><thead><tr><th>Customer</th><th>Qty</th><th>Destination</th><th>Rider</th><th>Dispatched</th><th>Accepted</th><th>On Way</th><th>Delivered</th><th>Proof</th></tr></thead><tbody>${completed.map(o=>{const e=getDeliveryEvents(o);return `<tr><td class="font-bold">${escapeHtml(o.customer)}</td><td>${escapeHtml(o.qty)}</td><td>${escapeHtml(o.destination||"—")}</td><td>${escapeHtml(o.rider||"—")}</td><td>${escapeHtml(o.time||formatDate(o.created_at))}</td><td>${escapeHtml(formatDate(e.accepted))}</td><td>${escapeHtml(formatDate(e.onway))}</td><td>${escapeHtml(formatDate(e.delivered))}</td><td>${e.proof?`<a href="${escapeHtml(e.proof)}" target="_blank" rel="noopener"><img src="${escapeHtml(e.proof)}" class="proof-thumb" alt="Proof"></a>`:"—"}</td></tr>`}).join("")}</tbody></table></div>`;
+  const input=$("admin-delivery-search");if(input){input.oninput=()=>{window.adminDeliverySearch=input.value;renderAdminDeliveryLog();}}
+}
+
+/* ---------- EMERGENCY ---------- */
+function buildSOSAlerts(){
+  const raw=(messages||[]).filter(m=>m.type==="sos_event");
+  const acked=new Set((messages||[]).filter(m=>m.type==="sos_ack").map(m=>String(m.text||"").replace("SOS acknowledged: ","")));
+  sosAlerts=raw.filter(m=>!acked.has(m.id)).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  return sosAlerts;
+}
+function renderSOSAlerts(){
+  const box=$("admin-sos-list"),count=$("admin-sos-count"),badge=$("admin-sos-badge");if(!box)return;
+  const hidden=getAdminSectionHiddenIds("emergency");
+  const alerts=buildSOSAlerts().filter(a=>!hidden.has(String(a.id)));
+  if(count)count.textContent=alerts.length; if(badge)badge.textContent=`${alerts.length} Active`;
+  if(!alerts.length){box.innerHTML='<div class="text-sm text-slate-400 text-center py-6">No active emergency alerts.</div>';return;}
+  box.innerHTML=alerts.map(a=>{
+    const parts=String(a.text||"").split("|");const rider=parts[1]||a.sender||"Rider";const coords=parts[2]||"Location unavailable";
+    return `<div class="sos-card"><div class="flex justify-between gap-3"><div><div class="font-extrabold text-red-700">🚨 ${escapeHtml(rider)}</div><div class="text-xs text-slate-500 mt-1">${escapeHtml(formatDate(a.created_at))}</div></div><span class="text-[10px] font-black text-red-700">SOS</span></div><div class="text-xs text-slate-600 mt-3">${escapeHtml(coords)}</div><div class="flex gap-2 mt-3"><button onclick="openSOSLocation('${escapeHtml(coords)}')" class="flex-1 bg-slate-950 text-white rounded-xl py-2 text-xs font-bold">View Location</button><button onclick="ackSOS('${a.id}')" class="flex-1 bg-red-600 text-white rounded-xl py-2 text-xs font-bold">Acknowledge</button></div></div>`;
+  }).join("");
+}
+function openSOSLocation(coords){
+  const m=String(coords||"").match(/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  if(m&&map){map.setView([Number(m[1]),Number(m[2])],16);L.popup().setLatLng([Number(m[1]),Number(m[2])]).setContent("🚨 SOS location").openOn(map);}
+  else toast("Location unavailable","The emergency did not contain valid GPS coordinates.");
+}
+async function ackSOS(id){
+  if(!db||!cloudReady||!id)return;
+  const {error}=await db.from("messages").insert([{rider_id:null,sender:"Admin",sender_role:"admin",text:"SOS acknowledged: "+id,type:"sos_ack",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+  if(error){toast("SOS acknowledgement failed",cleanError(error));return;}
+  toast("SOS acknowledged","Emergency alert has been marked as handled.",true);
+  renderSOSAlerts();
+}
+async function sendSOS(){
+  if(!cloudReady||!db||!riderRow){toast("SOS unavailable","Your rider cloud session is not active.");return;}
+  const confirmed=confirm("Send an emergency SOS to Badia Admin? Your latest GPS location will be included when available.");if(!confirmed)return;
+  const lat=typeof riderRow.lat==="number"?riderRow.lat:null,lng=typeof riderRow.lng==="number"?riderRow.lng:null;
+  const location=lat!==null&&lng!==null?`${lat.toFixed(6)}, ${lng.toFixed(6)}`:"Location unavailable";
+  const {error}=await db.from("messages").insert([{rider_id:riderRow.id,sender:riderRow.name,sender_role:"rider",text:`SOS|${riderRow.name}|${location}`,type:"sos_event",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+  if(error){toast("SOS failed",cleanError(error));return;}
+  toast("SOS SENT","Admin has received your emergency alert.",true);
+}
+
+/* ---------- ORDERS / ADMIN ---------- */
+async function handleCreateOrder(e){
+  e.preventDefault();
+  if(!cloudReady){toast("Cloud unavailable","Order dispatch needs the cloud connection.");return;}
+  const customer=$("order-customer").value.trim();
+  const qty=$("order-qty").value.trim();
+  const destination=$("order-destination").value.trim();
+  const riderId=$("order-rider").value;
+  const rider=riders.find(x=>x.id===riderId);
+  const {data,error}=await db.from("orders").insert([{
+    customer,qty,destination,rider:rider?rider.name:null,rider_id:rider?rider.id:null,
+    time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}),status:"Pending"
+  }]).select().single();
+  if(error){toast("Order failed",cleanError(error));return;}
+  orders.unshift(data);
+  $("order-customer").value="";$("order-qty").value="";$("order-destination").value="";
+  toast("Dispatch created","Order saved to cloud.",true);
+  renderAll();
+}
+
+function generateAndPlayTTSDispatch(){
+  const customer=$("order-customer").value.trim();
+  const qty=$("order-qty").value.trim();
+  const riderId=$("order-rider").value;
+  const rider=riders.find(x=>x.id===riderId);
+  if(!customer||!qty){toast("Voice dispatch","Enter customer and quantity first.");return;}
+  const text=`New Badia dispatch for ${rider?rider.name:"rider"}. Customer ${customer}. Quantity ${qty}.`;
+  if("speechSynthesis" in window){
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  }
+  if(cloudReady&&rider){
+    db.from("messages").insert([{
+      rider_id:rider.id,sender:"Admin",sender_role:"admin",
+      text:"🔊 VOICE DISPATCH: "+text,type:"text",
+      time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+    }]).then(({error})=>{if(error)toast("Dispatch message failed",cleanError(error));});
+  }
+}
+
+function renderOrders(){
+  const list=$("admin-orders-list");if(!list)return;
+  const search=String($("admin-order-search")?.value||"").toLowerCase().trim();
+  const filter=$("admin-order-filter")?.value||"all";
+  const hidden=getAdminSectionHiddenIds("dispatches");
+  const active=orders.filter(o=>o.status!=="Delivered").filter(o=>!hidden.has(String(o.id))).filter(o=>filter==="all"||o.status===filter).filter(o=>!search||[o.id,o.customer,o.qty,o.destination,o.rider,o.status].join(" ").toLowerCase().includes(search));
+  $("admin-order-count").textContent=orders.filter(o=>o.status!=="Delivered").length;
+  list.innerHTML="";
+  active.forEach(o=>{
+    const d=document.createElement("div");d.className="border rounded-xl p-3 bg-slate-50";
+    const actions=appRole==="admin"?`<button onclick="adminQuickStatus('${o.id}','${o.status==="Pending"?"Accepted":o.status==="Accepted"?"On the Way":"Delivered"}')" class="mt-2 w-full bg-slate-950 text-white rounded-lg py-2 text-xs font-bold">${o.status==="Pending"?"ACCEPT ON BEHALF OF RIDER":o.status==="Accepted"?"MARK ON THE WAY":"MARK DELIVERED"}</button>`:"";
+    d.innerHTML=`<div class="flex justify-between gap-2"><div class="font-bold">${escapeHtml(o.customer)}</div><span class="status-chip ${statusClass(o.status)}">${escapeHtml(o.status||"Pending")}</span></div><div class="text-xs text-slate-500 mt-1">${escapeHtml(o.qty)} • ${escapeHtml(o.rider||"Unassigned")}</div><div class="text-xs text-slate-600 mt-1"><b>Destination:</b> ${escapeHtml(o.destination||"Not specified")}</div><div class="text-[11px] text-slate-400 mt-1">${escapeHtml(o.time||formatDate(o.created_at))}</div>${actions}`;
+    list.appendChild(d);
+  });
+  if(!active.length)list.innerHTML='<div class="text-sm text-slate-400 py-5 text-center">No dispatches match the current filter.</div>';
+}
+async function adminQuickStatus(orderId,nextStatus){
+  if(!cloudReady||!db||appRole!=="admin")return;
+  const order=orders.find(o=>o.id===orderId);if(!order)return;
+  const {data,error}=await db.from("orders").update({status:nextStatus}).eq("id",orderId).select().single();
+  if(error){toast("Status update failed",cleanError(error));return;}
+  orders=orders.map(o=>o.id===data.id?data:o);
+  if(nextStatus==="Accepted")await db.from("messages").insert([{rider_id:order.rider_id,sender:"Admin",sender_role:"admin",text:"Delivery accepted: "+orderId,type:"delivery_event",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+  if(nextStatus==="On the Way")await db.from("messages").insert([{rider_id:order.rider_id,sender:"Admin",sender_role:"admin",text:"Delivery started: "+orderId,type:"delivery_event",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+  if(nextStatus==="Delivered")await db.from("messages").insert([{rider_id:order.rider_id,sender:"Admin",sender_role:"admin",text:"Delivery completed: "+orderId,type:"delivery_event",audio_url:null,time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}]);
+  renderAll();toast("Dispatch updated",`${order.customer} is now ${nextStatus}.`,true);
+}
+
+function escapeHtml(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+
+function getDashboardHiddenOnlineRiderIds(){
+  try{return new Set(JSON.parse(localStorage.getItem(adminSectionStorageKey("dashboard_online_riders"))||"[]").map(String))}catch(e){return new Set();}
+}
+
+function isDashboardOnlineRiderVisible(r){
+  const hidden=getDashboardHiddenOnlineRiderIds();
+  if(!hidden.has(String(r.id)))return true;
+  const clearAt=Number(localStorage.getItem(adminSectionStorageKey("dashboard_online_riders_at"))||0);
+  const loginAt=new Date(r.login_timestamp||0).getTime();
+  return loginAt>clearAt;
+}
+
+function renderFleet(){
+  const box=$("admin-riders-status");if(!box)return;box.innerHTML="";
+  const online=riders.filter(r=>r.status==="Online"&&isDashboardOnlineRiderVisible(r)).length;
+  $("admin-fleet-count").textContent=online;
+  const sel=$("order-rider"),old=sel.value;sel.innerHTML='<option value="">Assign Rider</option>';
+  const assignHidden=getAdminSectionHiddenIds("assign_riders");
+  const assignClearAt=Number(localStorage.getItem(adminSectionStorageKey("assign_riders_at"))||0);
+  riders.filter(r=>{if(!assignHidden.has(String(r.id)))return true;const loginAt=new Date(r.login_timestamp||0).getTime();return loginAt>assignClearAt;}).forEach(r=>{const opt=document.createElement("option");opt.value=r.id;opt.textContent=r.name+" — "+r.phone;sel.appendChild(opt);});
+  if(riders.some(r=>r.id===old))sel.value=old;
+  const fleetClearedAt=Number(localStorage.getItem(adminSectionStorageKey("fleet"))||0);
+  riders.filter(r=>!fleetClearedAt || new Date(r.last_seen||0).getTime()>fleetClearedAt).forEach(r=>{
+    const d=document.createElement("div");d.className="border rounded-xl p-3 cursor-pointer hover:bg-slate-50";d.onclick=()=>selectAdminRider(r.id);
+    d.innerHTML=`<div class="flex justify-between gap-2"><b>${escapeHtml(r.name)}</b><span class="text-xs ${r.status==="Online"?"text-green-600":"text-slate-400"}">${escapeHtml(r.status||"Offline")}</span></div><div class="text-xs text-slate-500">${escapeHtml(r.phone)}</div><div class="text-[11px] text-slate-400 mt-1">Last seen: ${escapeHtml(formatDate(r.last_seen))}</div>`;box.appendChild(d);
+  });
+  if(!riders.length)box.innerHTML='<div class="text-sm text-slate-400 text-center py-6">No riders connected.</div>';
+  updateMap();
+}
+
+function formatDate(v){
+  if(!v)return "—";
+  try{return new Date(v).toLocaleString([], {month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}catch(e){return v}
+}
+
+function selectAdminRider(id){
+  selectedRiderId=id;
+  const r=riders.find(x=>x.id===id);
+  $("admin-chat-header").textContent=r?r.name:"Select a rider";
+  renderAdminChat();
+}
+
+function renderAdminChat(){
+  if(!selectedRiderId){
+    $("admin-chat-messages").innerHTML='<div class="text-sm text-slate-400 text-center py-20">Select a rider from the fleet list.</div>';
+    return;
+  }
+  const hidden=getAdminSectionHiddenIds("chat_"+selectedRiderId);renderMessages($("admin-chat-messages"),messages.filter(m=>m.rider_id===selectedRiderId && m.type!=="delivery_event" && !hidden.has(String(m.id))),"admin");
+}
+
+/* ---------- MAP ---------- */
+function initMap(){
+  if(map||!window.L)return;
+  map=L.map("leaflet-map").setView([5.6037,-0.1870],12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+  updateMap();
+}
+
+function updateMap(){
+  if(!map)return;
+  const mapClearedAt=Number(localStorage.getItem(adminSectionStorageKey("map"))||0);
+  riders.filter(r=>!mapClearedAt || new Date(r.last_seen||0).getTime()>mapClearedAt).forEach(r=>{
+    if(typeof r.lat!=="number"||typeof r.lng!=="number")return;
+    const pos=[r.lat,r.lng];
+    if(!riderMarkers[r.id]){
+      riderMarkers[r.id]=L.marker(pos).addTo(map).bindPopup(escapeHtml(r.name));
+    }else riderMarkers[r.id].setLatLng(pos);
+  });
+  $("admin-map-status").textContent=riders.some(r=>(!mapClearedAt || new Date(r.last_seen||0).getTime()>mapClearedAt)&&typeof r.lat==="number")?"Rider GPS active":"Waiting for rider GPS";
+}
+
+/* ---------- RENDER ---------- */
+let clearChatTargetId=null;
+let clearHistoryTarget=null;
+function historyStorageKey(role,id){return "badia_history_hidden_v1_"+role+"_"+(id||"all");}
+function getHiddenHistoryIds(role,id){try{return new Set(JSON.parse(localStorage.getItem(historyStorageKey(role,id))||"[]").map(String))}catch(e){return new Set();}}
+function openClearHistoryDialog(role,id){clearHistoryTarget={role,id};const d=document.getElementById("clear-history-dialog");const desc=document.getElementById("clear-history-description");if(desc)desc.textContent=role==="admin"?"This removes all completed delivery history from this Admin portal only. Operational orders, delivery records and emergency records remain safely stored in the cloud.":"This removes your completed delivery history from this Rider portal only. Operational orders, delivery records and emergency records remain safely stored in the cloud.";if(d)d.classList.remove("hidden");}
+function closeClearHistoryDialog(){clearHistoryTarget=null;document.getElementById("clear-history-dialog")?.classList.add("hidden");}
+function clearPortalHistory(){if(!clearHistoryTarget){closeClearHistoryDialog();return;}const {role,id}=clearHistoryTarget;const completed=role==="admin"?orders.filter(o=>o.status==="Delivered"):orders.filter(o=>o.rider_id===id&&o.status==="Delivered");try{localStorage.setItem(historyStorageKey(role,id),JSON.stringify(completed.map(o=>String(o.id))))}catch(e){toast("History Clear Failed","Your browser did not allow local history storage.");closeClearHistoryDialog();return;}closeClearHistoryDialog();renderRiderDeliveryLog();renderAdminDeliveryLog();toast("History Cleared",role==="admin"?"Completed delivery history is hidden from the Admin portal.":"Your completed delivery history is hidden from the Rider portal.",true);}
+
+let adminSectionClearTarget=null;
+function adminSectionStorageKey(section){return "badia_admin_section_history_hidden_v1_"+section;}
+function getAdminSectionHiddenIds(section){try{return new Set(JSON.parse(localStorage.getItem(adminSectionStorageKey(section))||"[]").map(String))}catch(e){return new Set();}}
+function openAdminSectionClearDialog(section){adminSectionClearTarget=section;const d=document.getElementById("admin-section-clear-dialog");const desc=document.getElementById("admin-section-clear-description");const names={dashboard:"Command Center Dashboard",dispatches:"Active Dispatches",emergency:"Emergency Alerts",fleet:"Fleet Timestamps",map:"Accra Fleet Map",chat:"Private Chat",assign_riders:"Assign Rider list"};if(desc)desc.textContent=section==="dashboard"?"This clears the current dashboard activity, including the displayed online-rider count, from this Admin portal view only. New rider activity will appear normally. Cloud records are not deleted.":section==="assign_riders"?"This clears the currently displayed riders from the Assign Rider list in this Admin portal view only. Rider records, GPS data, accounts and orders are not deleted. New rider activity will appear normally.":`This clears the ${names[section]||"selected"} history from this Admin portal view only. Cloud records are not deleted.`;if(d)d.classList.remove("hidden");}
+function closeAdminSectionClearDialog(){adminSectionClearTarget=null;document.getElementById("admin-section-clear-dialog")?.classList.add("hidden");}
+function clearAdminSectionHistory(){const section=adminSectionClearTarget;if(!section){closeAdminSectionClearDialog();return;}try{if(section==="dashboard"){const ids=[];orders.filter(o=>o.status!=="Delivered").forEach(o=>ids.push(String(o.id)));orders.filter(o=>o.status==="Delivered").forEach(o=>ids.push(String(o.id)));buildSOSAlerts().forEach(a=>ids.push(String(a.id)));localStorage.setItem(adminSectionStorageKey("dashboard"),JSON.stringify([...new Set(ids)]));const onlineRiderIds=riders.filter(r=>r.status==="Online").map(r=>String(r.id));localStorage.setItem(adminSectionStorageKey("dashboard_online_riders"),JSON.stringify(onlineRiderIds));localStorage.setItem(adminSectionStorageKey("dashboard_online_riders_at"),String(Date.now()));}
+else if(section==="dispatches"){localStorage.setItem(adminSectionStorageKey(section),JSON.stringify(orders.filter(o=>o.status!=="Delivered").map(o=>String(o.id))));}
+else if(section==="emergency"){localStorage.setItem(adminSectionStorageKey(section),JSON.stringify(buildSOSAlerts().map(a=>String(a.id))));}
+else if(section==="fleet"){localStorage.setItem(adminSectionStorageKey(section),String(Date.now()));}
+else if(section==="map"){localStorage.setItem(adminSectionStorageKey(section),String(Date.now()));Object.values(riderMarkers||{}).forEach(m=>{try{map&&map.removeLayer(m)}catch(e){}});riderMarkers={};}
+else if(section==="chat"){if(selectedRiderId)localStorage.setItem(adminSectionStorageKey(section+"_"+selectedRiderId),JSON.stringify(messages.filter(m=>m.rider_id===selectedRiderId&&m.type!=="delivery_event").map(m=>String(m.id))));}
+else if(section==="assign_riders"){localStorage.setItem(adminSectionStorageKey(section),JSON.stringify(riders.map(r=>String(r.id))));localStorage.setItem(adminSectionStorageKey(section+"_at"),String(Date.now()));}
+closeAdminSectionClearDialog();renderAll();toast("History Cleared","The selected Admin section history has been cleared from this portal view. Cloud records were preserved.",true);}catch(e){closeAdminSectionClearDialog();toast("History Clear Failed","Your browser did not allow local history storage.");}}
+function openClearChatDialog(riderId){clearChatTargetId=riderId||null;const d=document.getElementById("clear-chat-dialog");if(d)d.classList.remove("hidden");}
+function closeClearChatDialog(){clearChatTargetId=null;document.getElementById("clear-chat-dialog")?.classList.add("hidden");}
+async function clearChat(riderId){const id=riderId||clearChatTargetId||(riderRow?riderRow.id:null);if(!id){closeClearChatDialog();return;}const {error}=await db.from("messages").delete().eq("rider_id",id).not("type","in","(delivery_event,sos_event,sos_ack)");if(error){closeClearChatDialog();toast("Clear Chat Failed","Please make sure the Badia messages DELETE policy is enabled in Supabase.");return;}messages=(messages||[]).filter(m=>!(m.rider_id===id&&!['delivery_event','sos_event','sos_ack'].includes(m.type)));closeClearChatDialog();renderRiderChat();renderAdminChat();renderAdminStats();toast("Chat Cleared","Private chat history has been permanently removed; delivery and emergency records were preserved.",true);}
+(function(){const bind=()=>{document.getElementById("admin-section-clear-cancel")?.addEventListener("click",closeAdminSectionClearDialog);document.getElementById("admin-section-clear-dialog")?.addEventListener("click",e=>{if(e.target.id==="admin-section-clear-dialog")closeAdminSectionClearDialog();});document.getElementById("admin-section-clear-confirm")?.addEventListener("click",clearAdminSectionHistory);document.getElementById("clear-chat-cancel")?.addEventListener("click",closeClearChatDialog);document.getElementById("clear-chat-dialog")?.addEventListener("click",e=>{if(e.target.id==="clear-chat-dialog")closeClearChatDialog();});document.getElementById("clear-chat-confirm")?.addEventListener("click",()=>clearChat());document.getElementById("rider-clear-chat-btn")?.addEventListener("click",()=>{if(riderRow)openClearChatDialog(riderRow.id);});document.getElementById("admin-clear-chat-btn")?.addEventListener("click",()=>{if(selectedRiderId)openClearChatDialog(selectedRiderId);else showToast("Select a rider","Choose a rider before clearing a private chat.","error");});document.getElementById("clear-history-cancel")?.addEventListener("click",closeClearHistoryDialog);document.getElementById("clear-history-dialog")?.addEventListener("click",e=>{if(e.target.id==="clear-history-dialog")closeClearHistoryDialog();});document.getElementById("clear-history-confirm")?.addEventListener("click",clearPortalHistory);document.getElementById("rider-clear-history-btn")?.addEventListener("click",()=>{if(riderRow)openClearHistoryDialog("rider",riderRow.id);else showToast("Rider unavailable","Your rider session is not active.","error");});document.getElementById("admin-clear-history-btn")?.addEventListener("click",()=>openClearHistoryDialog("admin","all"));};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind,{once:true});else bind();})();
+function renderAdminStats(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const hidden=getAdminSectionHiddenIds("dashboard");
+  const activeCount=orders.filter(o=>o.status!=="Delivered"&&!hidden.has(String(o.id))).length;
+  const completedToday=orders.filter(o=>o.status==="Delivered"&&new Date(o.created_at||0)>=today&&!hidden.has(String(o.id))).length;
+  const sosCount=buildSOSAlerts().filter(a=>!hidden.has(String(a.id))).length;
+  const onlineCount=riders.filter(r=>r.status==="Online"&&isDashboardOnlineRiderVisible(r)).length;
+  $("admin-fleet-count")&&($("admin-fleet-count").textContent=onlineCount);
+  $("admin-order-count")&&($("admin-order-count").textContent=activeCount);
+  $("admin-completed-today")&&($("admin-completed-today").textContent=completedToday);
+  $("admin-sos-count")&&($("admin-sos-count").textContent=sosCount);
+  renderSOSAlerts();
+}
+function bindAdminFilters(){
+  ["admin-order-search","admin-order-filter"].forEach(id=>{const el=$(id);if(el&&!el.__badiaBound){el.__badiaBound=true;el.addEventListener("input",renderOrders);el.addEventListener("change",renderOrders);}});
+}
+
+function renderAll(){
+  bindAdminFilters();
+  renderOrders();
+  renderFleet();
+  renderRiderChat();
+  renderRiderDispatches();
+  renderAdminChat();
+  renderRiderDeliveryLog();
+  renderAdminDeliveryLog();
+  renderAdminStats();
+  if(map)updateMap();
+}
+
+function startClock(){
+  clearInterval(clockTimer);
+  const tick=()=>{
+    $("rider-phone-clock").textContent=new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  };
+  tick();clockTimer=setInterval(tick,1000);
+}
+
+/* ---------- LOGOUT: DO NOT SIGN OUT SUPABASE ANONYMOUS SESSION ---------- */
+async function riderLogout(){
+  if(riderRow&&cloudReady&&db){
+    try{
+      await db.from("riders").update({
+        status:"Offline",
+        logout_time:new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}),
+        logout_timestamp:new Date().toISOString(),
+        last_seen:new Date().toISOString()
+      }).eq("id",riderRow.id);
+    }catch(e){console.warn(e)}
+  }
+  if(gpsWatchId!==null&&navigator.geolocation){
+    navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;
+  }
+  appRole=null;riderRow=null;
+  showView("view-auth");setAuthMode("rider");
+  toast("Rider logged out","Anonymous cloud session remains available for this device.",true);
+}
+
+async function adminLogout(){
+  try{if(db)await db.auth.signOut();}catch(e){console.warn(e)}
+  appRole=null;adminUser=null;selectedRiderId=null;currentUser=null;
+  cloudReady=false;
+  showView("view-auth");setAuthMode("admin");
+  toast("Admin logged out","Your Supabase admin session has been terminated.",true);
+  setTimeout(()=>ensureCloud(),150);
+}
+
+/* Unlock browser audio on the first real user interaction. This is required by mobile autoplay policies. */
+['pointerdown','touchstart','keydown','click'].forEach(evt=>{
+  document.addEventListener(evt,unlockNotificationAudio,{once:false,passive:true});
+});
+
+/* ---------- STARTUP ---------- */
+(async function boot(){
+  setAuthMode("rider");
+  setConnection("Connecting to Cloud...",false);
+  ensureCloud().catch(function(err){
+    console.warn("BADIA startup cloud initialization:",err);
+  });
+})();
+</script>
+</body>
+</html>
